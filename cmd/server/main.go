@@ -56,14 +56,14 @@ func main() {
 	router.Use(middleware.CORSMiddleware())
 	router.Use(gin.Recovery())
 
-	// Health check endpoint (no auth required)
+	// Initialize handlers
 	postHandler := handlers.NewPostHandler(blueSkyClient)
-	router.GET("/health", postHandler.HealthCheck)
 
-	// Protected routes
+	// API routes (all routes now under /bluesky/api prefix)
 	api := router.Group("/bluesky/api")
 	api.Use(middleware.APIKeyMiddleware(cfg))
 	{
+		api.GET("/health", postHandler.HealthCheck)
 		api.POST("/posts/create", postHandler.CreatePost)
 		api.POST("/test/posts/create", postHandler.CreateTestPost)
 	}
