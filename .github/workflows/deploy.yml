@@ -1,4 +1,4 @@
-name: CI/CD bluesky-connector
+name: deploy
 
 on:
   push:
