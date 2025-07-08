@@ -42,3 +42,4 @@ Thumbs.db
 /bin/
 /dist/
 bluesky-connector
+.env.prod
