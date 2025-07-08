@@ -59,11 +59,13 @@ func main() {
 	// Initialize handlers
 	postHandler := handlers.NewPostHandler(blueSkyClient)
 
-	// API routes (all routes now under /bluesky/api prefix)
+	// Health check route (no authentication required)
+	router.GET("/bluesky/api/health", postHandler.HealthCheck)
+
+	// API routes (authenticated routes under /bluesky/api prefix)
 	api := router.Group("/bluesky/api")
 	api.Use(middleware.APIKeyMiddleware(cfg))
 	{
-		api.GET("/health", postHandler.HealthCheck)
 		api.POST("/posts/create", postHandler.CreatePost)
 		api.POST("/test/posts/create", postHandler.CreateTestPost)
 	}
