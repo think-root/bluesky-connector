@@ -83,7 +83,6 @@ The server will start on `http://localhost:8080` (or your configured port).
 
 ### Health Check
 - **GET `/bluesky/api/health`**: Check server health status
-  - **Headers**: `X-API-Key: your-api-key`
   - Returns server status and timestamp
 
 ### Post Creation
@@ -104,8 +103,7 @@ The server will start on `http://localhost:8080` (or your configured port).
 
 ### Health check
 ```bash
-curl -X GET http://localhost:8080/bluesky/api/health \
-  -H "X-API-Key: your-api-key"
+curl -X GET http://localhost:8080/bluesky/api/health
 ```
 
 ### Simple text post
