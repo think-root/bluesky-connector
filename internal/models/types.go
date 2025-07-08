@@ -19,7 +19,7 @@ type CreateSessionResponse struct {
 type CreateRecordRequest struct {
 	Repo       string      `json:"repo"`
 	Collection string      `json:"collection"`
-	Record     interface{} `json:"record"`
+	Record     any `json:"record"`
 }
 
 type CreateRecordResponse struct {
@@ -61,7 +61,7 @@ type EmbedImage struct {
 // This handles the variation in how different AT Protocol implementations return blob references
 type BlobRef struct {
 	Type     string      `json:"$type"`
-	Ref      interface{} `json:"ref"` // Can be string (CID) or object with CID
+	Ref      any `json:"ref"` // Can be string (CID) or object with CID
 	MimeType string      `json:"mimeType"`
 	Size     int64       `json:"size"`
 }
@@ -71,7 +71,7 @@ func (b *BlobRef) GetRefString() string {
 	switch v := b.Ref.(type) {
 	case string:
 		return v
-	case map[string]interface{}:
+	case map[string]any:
 		// Handle CID object structure
 		if cid, ok := v["$link"].(string); ok {
 			return cid

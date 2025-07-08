@@ -25,42 +25,42 @@ func Init(level string) {
 	Logger.Info("Logger initialized")
 }
 
-func Info(args ...interface{}) {
+func Info(args ...any) {
 	Logger.Info(args...)
 }
 
-func Infof(format string, args ...interface{}) {
+func Infof(format string, args ...any) {
 	Logger.Infof(format, args...)
 }
 
-func Warn(args ...interface{}) {
+func Warn(args ...any) {
 	Logger.Warn(args...)
 }
 
-func Warnf(format string, args ...interface{}) {
+func Warnf(format string, args ...any) {
 	Logger.Warnf(format, args...)
 }
 
-func Error(args ...interface{}) {
+func Error(args ...any) {
 	Logger.Error(args...)
 }
 
-func Errorf(format string, args ...interface{}) {
+func Errorf(format string, args ...any) {
 	Logger.Errorf(format, args...)
 }
 
-func Debug(args ...interface{}) {
+func Debug(args ...any) {
 	Logger.Debug(args...)
 }
 
-func Debugf(format string, args ...interface{}) {
+func Debugf(format string, args ...any) {
 	Logger.Debugf(format, args...)
 }
 
-func Fatal(args ...interface{}) {
+func Fatal(args ...any) {
 	Logger.Fatal(args...)
 }
 
-func Fatalf(format string, args ...interface{}) {
+func Fatalf(format string, args ...any) {
 	Logger.Fatalf(format, args...)
 }
