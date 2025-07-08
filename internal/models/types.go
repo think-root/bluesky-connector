@@ -56,11 +56,39 @@ type EmbedImage struct {
 	Image *BlobRef  `json:"image"`
 }
 
+// BlobRef represents a reference to a blob in the AT Protocol
+// The Ref field can be either a string (CID) or an object containing the CID
+// This handles the variation in how different AT Protocol implementations return blob references
 type BlobRef struct {
-	Type     string `json:"$type"`
-	Ref      string `json:"ref"`
-	MimeType string `json:"mimeType"`
-	Size     int64  `json:"size"`
+	Type     string      `json:"$type"`
+	Ref      interface{} `json:"ref"` // Can be string (CID) or object with CID
+	MimeType string      `json:"mimeType"`
+	Size     int64       `json:"size"`
+}
+
+// GetRefString returns the ref as a string, handling both string and object cases
+func (b *BlobRef) GetRefString() string {
+	switch v := b.Ref.(type) {
+	case string:
+		return v
+	case map[string]interface{}:
+		// Handle CID object structure
+		if cid, ok := v["$link"].(string); ok {
+			return cid
+		}
+		// Fallback: try to get any string value from the object
+		for _, val := range v {
+			if str, ok := val.(string); ok {
+				return str
+			}
+		}
+	}
+	return ""
+}
+
+// SetRefString sets the ref field as a string
+func (b *BlobRef) SetRefString(ref string) {
+	b.Ref = ref
 }
 
 // Blob Upload types
