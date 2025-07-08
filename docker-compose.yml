@@ -2,7 +2,12 @@ version: '3.8'
 
 services:
   bluesky-connector:
-    build: .
+    build:
+      context: .
+      tags:
+        - "bluesky-connector:latest"
+    image: bluesky-connector:latest
+    container_name: bluesky-connector
     ports:
       - "8080:8080"
     env_file:
@@ -18,3 +23,9 @@ services:
       - LOG_LEVEL=info
     volumes:
       - ./logs:/app/logs
+    networks:
+      - think-root-network
+
+networks:
+  think-root-network:
+    external: true
