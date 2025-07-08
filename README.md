@@ -1,5 +1,6 @@
 # Bluesky Connector
 
+[![deploy](https://github.com/think-root/bluesky-connector/actions/workflows/deploy.yml/badge.svg)](https://github.com/think-root/bluesky-connector/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go 1.24.4](https://img.shields.io/badge/Go-1.24.4-blue.svg)](https://golang.org/)
 [![Gin](https://img.shields.io/badge/Gin-1.10.0-green.svg)](https://gin-gonic.com/)
