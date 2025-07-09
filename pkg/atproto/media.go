@@ -38,6 +38,13 @@ func (mm *MediaManager) UploadBlob(data []byte, mimeType string) (*models.BlobRe
 		return nil, fmt.Errorf("not authenticated")
 	}
 
+	// Log token usage for debugging
+	fmt.Printf("DEBUG: Starting blob upload with token: %s...\n", mm.sessionManager.GetAccessToken()[:20])
+
+	return mm.uploadBlobWithRetry(data, mimeType, false)
+}
+
+func (mm *MediaManager) uploadBlobWithRetry(data []byte, mimeType string, isRetry bool) (*models.BlobRef, error) {
 	// Create multipart form
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
@@ -64,6 +71,8 @@ func (mm *MediaManager) UploadBlob(data []byte, mimeType string) (*models.BlobRe
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+mm.sessionManager.GetAccessToken())
 
+	fmt.Printf("DEBUG: Making blob upload request (retry=%v)\n", isRetry)
+
 	resp, err := mm.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
@@ -74,10 +83,25 @@ func (mm *MediaManager) UploadBlob(data []byte, mimeType string) (*models.BlobRe
 		body, _ := io.ReadAll(resp.Body)
 		var atError models.ATProtoError
 		if err := json.Unmarshal(body, &atError); err == nil {
+			fmt.Printf("DEBUG: AT Protocol error: %s (retry=%v)\n", atError.String(), isRetry)
+			
+			// If token expired and this is not a retry, attempt to refresh and retry
+			if atError.Error == "ExpiredToken" && !isRetry {
+				fmt.Println("DEBUG: Token expired, attempting to refresh session...")
+				if _, refreshErr := mm.sessionManager.RefreshSession(); refreshErr != nil {
+					fmt.Printf("DEBUG: Failed to refresh session: %v\n", refreshErr)
+					return nil, fmt.Errorf("AT Protocol error: %s (failed to refresh: %v)", atError.String(), refreshErr)
+				}
+				fmt.Println("DEBUG: Session refreshed successfully, retrying upload...")
+				return mm.uploadBlobWithRetry(data, mimeType, true)
+			}
+			
 			return nil, fmt.Errorf("AT Protocol error: %s", atError.String())
 		}
 		return nil, fmt.Errorf("HTTP error: %d, body: %s", resp.StatusCode, string(body))
 	}
+
+	fmt.Println("DEBUG: Blob upload successful")
 
 	var uploadResp models.BlobUploadResponse
 	if err := json.NewDecoder(resp.Body).Decode(&uploadResp); err != nil {
