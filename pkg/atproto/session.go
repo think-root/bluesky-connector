@@ -85,6 +85,8 @@ func (sm *SessionManager) RefreshSession() (*models.CreateSessionResponse, error
 		return nil, fmt.Errorf("no refresh token available")
 	}
 
+	fmt.Printf("DEBUG: Refreshing session with refresh token: %s...\n", sm.refreshToken[:20])
+
 	req, err := http.NewRequest("POST", sm.baseURL+RefreshSessionEndpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -101,8 +103,10 @@ func (sm *SessionManager) RefreshSession() (*models.CreateSessionResponse, error
 	if resp.StatusCode != http.StatusOK {
 		var atError models.ATProtoError
 		if err := json.NewDecoder(resp.Body).Decode(&atError); err == nil {
+			fmt.Printf("DEBUG: Refresh session failed: %s\n", atError.String())
 			return nil, fmt.Errorf("AT Protocol error: %s", atError.String())
 		}
+		fmt.Printf("DEBUG: Refresh session HTTP error: %d\n", resp.StatusCode)
 		return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode)
 	}
 
@@ -112,8 +116,12 @@ func (sm *SessionManager) RefreshSession() (*models.CreateSessionResponse, error
 	}
 
 	// Update tokens
+	oldAccessToken := sm.accessToken[:20]
 	sm.accessToken = sessionResp.AccessJWT
 	sm.refreshToken = sessionResp.RefreshJWT
+
+	fmt.Printf("DEBUG: Session refreshed successfully. Old token: %s..., New token: %s...\n",
+		oldAccessToken, sm.accessToken[:20])
 
 	return &sessionResp, nil
 }
