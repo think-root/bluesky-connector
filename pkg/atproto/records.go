@@ -38,6 +38,13 @@ func (rm *RecordManager) CreatePost(repo, text string, reply *models.Reply, embe
 		return nil, fmt.Errorf("not authenticated")
 	}
 
+	// Log token usage for debugging
+	fmt.Printf("DEBUG: Creating post with token: %s...\n", rm.sessionManager.GetAccessToken()[:20])
+
+	return rm.createPostWithRetry(repo, text, reply, embed, false)
+}
+
+func (rm *RecordManager) createPostWithRetry(repo, text string, reply *models.Reply, embed *models.Embed, isRetry bool) (*models.CreateRecordResponse, error) {
 	postRecord := models.PostRecord{
 		Type:      "app.bsky.feed.post",
 		Text:      text,
@@ -65,6 +72,8 @@ func (rm *RecordManager) CreatePost(repo, text string, reply *models.Reply, embe
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+rm.sessionManager.GetAccessToken())
 
+	fmt.Printf("DEBUG: Making create post request (retry=%v)\n", isRetry)
+
 	resp, err := rm.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
@@ -74,10 +83,25 @@ func (rm *RecordManager) CreatePost(repo, text string, reply *models.Reply, embe
 	if resp.StatusCode != http.StatusOK {
 		var atError models.ATProtoError
 		if err := json.NewDecoder(resp.Body).Decode(&atError); err == nil {
+			fmt.Printf("DEBUG: AT Protocol error: %s (retry=%v)\n", atError.String(), isRetry)
+			
+			// If token expired and this is not a retry, attempt to refresh and retry
+			if atError.Error == "ExpiredToken" && !isRetry {
+				fmt.Println("DEBUG: Token expired, attempting to refresh session...")
+				if _, refreshErr := rm.sessionManager.RefreshSession(); refreshErr != nil {
+					fmt.Printf("DEBUG: Failed to refresh session: %v\n", refreshErr)
+					return nil, fmt.Errorf("AT Protocol error: %s (failed to refresh: %v)", atError.String(), refreshErr)
+				}
+				fmt.Println("DEBUG: Session refreshed successfully, retrying post creation...")
+				return rm.createPostWithRetry(repo, text, reply, embed, true)
+			}
+			
 			return nil, fmt.Errorf("AT Protocol error: %s", atError.String())
 		}
 		return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode)
 	}
+
+	fmt.Println("DEBUG: Post creation successful")
 
 	var recordResp models.CreateRecordResponse
 	if err := json.NewDecoder(resp.Body).Decode(&recordResp); err != nil {
