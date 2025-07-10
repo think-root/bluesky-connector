@@ -52,6 +52,9 @@ func CORSMiddleware() gin.HandlerFunc {
 
 func LoggingMiddleware() gin.HandlerFunc {
 	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		if param.StatusCode == http.StatusOK && param.Path == "/bluesky/api/health" {
+			return ""
+		}
 		logger.Infof("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"",
 			param.ClientIP,
 			param.TimeStamp.Format("02/Jan/2006:15:04:05 -0700"),
