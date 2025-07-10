@@ -93,31 +93,67 @@ jobs:
               sudo apt-get install -y docker.io
             fi
 
-            if [ -d "$REPO_FOLDER" ]; then
-              echo "Removing existing repository folder..."
-              rm -rf "$REPO_FOLDER"
+            if [ ! -d "$REPO_FOLDER" ]; then
+              echo "Cloning new version of the repository..."
+              git clone "https://github.com/${{ github.repository }}.git" "$REPO_FOLDER"
+            else
+              echo "Updating existing repository..."
+              cd "$REPO_FOLDER"
+              git pull origin main # Assuming 'main' branch
             fi
-
-            echo "Cloning new version of the repository..."
-            git clone "https://github.com/${{ github.repository }}.git" "$REPO_FOLDER"
 
             cd "$REPO_FOLDER"
 
             echo "Setting up .env file..."
             echo "${{ secrets.ENV_PROD }}" > .env
 
-            if docker inspect bluesky-connector >/dev/null 2>&1; then
-              echo "Stopping and removing existing container..."
-              docker rm -f bluesky-connector
+            # --- Zero-downtime deployment logic (minimal downtime) ---
+
+            # 1. Build the new image
+            echo "Building new Docker image..."
+            docker compose build bluesky-connector
+
+            # 2. Stop and remove the old container (if it exists)
+            OLD_CONTAINER_NAME="${{ steps.repo_name.outputs.repo }}"
+            if docker inspect "$OLD_CONTAINER_NAME" >/dev/null 2>&1; then
+              echo "Stopping old container: $OLD_CONTAINER_NAME"
+              docker stop "$OLD_CONTAINER_NAME"
+              echo "Removing old container: $OLD_CONTAINER_NAME"
+              docker rm "$OLD_CONTAINER_NAME"
+            else
+              echo "Old container ($OLD_CONTAINER_NAME) not found. Skipping stop/remove."
             fi
 
-            echo "Starting app via Docker Compose..."
-            docker compose up -d --build --remove-orphans
+            # 3. Start the new container
+            echo "Starting new app via Docker Compose..."
+            docker compose up -d --no-deps bluesky-connector
+
+            # 4. Wait for the new container to be healthy
+            echo "Waiting for new container ($OLD_CONTAINER_NAME) to be healthy..."
+            HEALTH_STATUS=""
+            MAX_RETRIES=20 # Increased retries for healthcheck (20 * 10s = 200s)
+            RETRY_COUNT=0
+            while [ "$HEALTH_STATUS" != "healthy" ] && [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
+              sleep 10 # Wait for 10 seconds before checking
+              HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$OLD_CONTAINER_NAME" 2>/dev/null || echo "not_found")
+              if [ "$HEALTH_STATUS" = "not_found" ]; then
+                echo "Container ($OLD_CONTAINER_NAME) not found. Something went wrong during startup."
+                exit 1
+              fi
+              echo "Current health status of $OLD_CONTAINER_NAME: $HEALTH_STATUS"
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+            done
+
+            if [ "$HEALTH_STATUS" != "healthy" ]; then
+              echo "Container ($OLD_CONTAINER_NAME) did not become healthy within the expected time. Aborting deployment."
+              docker logs "$OLD_CONTAINER_NAME"
+              exit 1
+            fi
 
             echo "Deployment complete!"
 
             echo "Checking container status..."
-            docker ps | grep bluesky-connector || echo "Container not found in running processes"
-            
+            docker ps | grep "$OLD_CONTAINER_NAME" || echo "Container not found in running processes"
+
             echo "Checking application logs..."
-            docker logs bluesky-connector --tail 50 || echo "Could not retrieve logs"
+            docker logs "$OLD_CONTAINER_NAME" --tail 50 || echo "Could not retrieve logs"
