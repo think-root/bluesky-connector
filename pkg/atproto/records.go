@@ -45,6 +45,12 @@ func (rm *RecordManager) CreatePost(repo, text string, reply *models.Reply, embe
 }
 
 func (rm *RecordManager) createPostWithRetry(repo, text string, reply *models.Reply, embed *models.Embed, isRetry bool) (*models.CreateRecordResponse, error) {
+	// Log embed details if present
+	if embed != nil && len(embed.Images) > 0 {
+		fmt.Printf("DEBUG: Creating post with embed - Type: %s, Image MIME: %s\n",
+			embed.Type, embed.Images[0].Image.MimeType)
+	}
+
 	postRecord := models.PostRecord{
 		Type:      "app.bsky.feed.post",
 		Text:      text,

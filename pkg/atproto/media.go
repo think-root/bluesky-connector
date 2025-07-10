@@ -25,7 +25,7 @@ func NewMediaManager(baseURL string, sessionManager *SessionManager) *MediaManag
 	if baseURL == "" {
 		baseURL = DefaultBaseURL
 	}
-	
+
 	return &MediaManager{
 		baseURL:        baseURL,
 		httpClient:     sessionManager.httpClient,
@@ -84,7 +84,7 @@ func (mm *MediaManager) uploadBlobWithRetry(data []byte, mimeType string, isRetr
 		var atError models.ATProtoError
 		if err := json.Unmarshal(body, &atError); err == nil {
 			fmt.Printf("DEBUG: AT Protocol error: %s (retry=%v)\n", atError.String(), isRetry)
-			
+
 			// If token expired and this is not a retry, attempt to refresh and retry
 			if atError.Error == "ExpiredToken" && !isRetry {
 				fmt.Println("DEBUG: Token expired, attempting to refresh session...")
@@ -95,7 +95,7 @@ func (mm *MediaManager) uploadBlobWithRetry(data []byte, mimeType string, isRetr
 				fmt.Println("DEBUG: Session refreshed successfully, retrying upload...")
 				return mm.uploadBlobWithRetry(data, mimeType, true)
 			}
-			
+
 			return nil, fmt.Errorf("AT Protocol error: %s", atError.String())
 		}
 		return nil, fmt.Errorf("HTTP error: %d, body: %s", resp.StatusCode, string(body))
@@ -108,13 +108,28 @@ func (mm *MediaManager) uploadBlobWithRetry(data []byte, mimeType string, isRetr
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
+	fmt.Printf("DEBUG: Server returned BlobRef - Type: %s, MimeType: %s, Size: %d\n",
+		uploadResp.Blob.Type, uploadResp.Blob.MimeType, uploadResp.Blob.Size)
+
+	uploadResp.Blob.MimeType = mimeType
+	fmt.Printf("DEBUG: Fixed MIME type to: %s\n", mimeType)
+
 	return &uploadResp.Blob, nil
 }
 
 func (mm *MediaManager) CreateImageEmbed(imageData []byte, mimeType, altText string) (*models.Embed, error) {
+	fmt.Printf("DEBUG: CreateImageEmbed called with mimeType: %s\n", mimeType)
+
 	blobRef, err := mm.UploadBlob(imageData, mimeType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload blob: %w", err)
+	}
+
+	fmt.Printf("DEBUG: BlobRef after upload - Type: %s, MimeType: %s, Size: %d\n",
+		blobRef.Type, blobRef.MimeType, blobRef.Size)
+
+	if blobRef.Type == "" {
+		blobRef.Type = "blob"
 	}
 
 	embed := &models.Embed{
@@ -127,6 +142,7 @@ func (mm *MediaManager) CreateImageEmbed(imageData []byte, mimeType, altText str
 		},
 	}
 
+	fmt.Printf("DEBUG: Created embed with image MIME type: %s\n", embed.Images[0].Image.MimeType)
 	return embed, nil
 }
 
