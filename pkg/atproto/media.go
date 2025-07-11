@@ -111,8 +111,9 @@ func (mm *MediaManager) uploadBlobWithRetry(data []byte, mimeType string, isRetr
 	fmt.Printf("DEBUG: Server returned BlobRef - Type: %s, MimeType: %s, Size: %d\n",
 		uploadResp.Blob.Type, uploadResp.Blob.MimeType, uploadResp.Blob.Size)
 
-	uploadResp.Blob.MimeType = mimeType
-	fmt.Printf("DEBUG: Fixed MIME type to: %s\n", mimeType)
+	if uploadResp.Blob.MimeType != mimeType {
+		fmt.Printf("WARNING: Server stored blob with MIME type '%s', but detected file type is '%s'. Using server value.\n", uploadResp.Blob.MimeType, mimeType)
+	}
 
 	return &uploadResp.Blob, nil
 }
