@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 
 	"github.com/think-root/bluesky-connector/internal/models"
@@ -38,37 +37,18 @@ func (mm *MediaManager) UploadBlob(data []byte, mimeType string) (*models.BlobRe
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	// Log token usage for debugging
 	fmt.Printf("DEBUG: Starting blob upload with token: %s...\n", mm.sessionManager.GetAccessToken()[:20])
 
 	return mm.uploadBlobWithRetry(data, mimeType, false)
 }
 
 func (mm *MediaManager) uploadBlobWithRetry(data []byte, mimeType string, isRetry bool) (*models.BlobRef, error) {
-	// Create multipart form
-	var buf bytes.Buffer
-	writer := multipart.NewWriter(&buf)
-
-	// Add the file data
-	part, err := writer.CreateFormFile("file", "image")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create form file: %w", err)
-	}
-
-	if _, err := part.Write(data); err != nil {
-		return nil, fmt.Errorf("failed to write file data: %w", err)
-	}
-
-	if err := writer.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close writer: %w", err)
-	}
-
-	req, err := http.NewRequest("POST", mm.baseURL+BlobUploadEndpoint, &buf)
+	req, err := http.NewRequest("POST", mm.baseURL+BlobUploadEndpoint, bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Content-Type", mimeType)
 	req.Header.Set("Authorization", "Bearer "+mm.sessionManager.GetAccessToken())
 
 	fmt.Printf("DEBUG: Making blob upload request (retry=%v)\n", isRetry)
@@ -85,7 +65,6 @@ func (mm *MediaManager) uploadBlobWithRetry(data []byte, mimeType string, isRetr
 		if err := json.Unmarshal(body, &atError); err == nil {
 			fmt.Printf("DEBUG: AT Protocol error: %s (retry=%v)\n", atError.String(), isRetry)
 
-			// If token expired and this is not a retry, attempt to refresh and retry
 			if atError.Error == "ExpiredToken" && !isRetry {
 				fmt.Println("DEBUG: Token expired, attempting to refresh session...")
 				if _, refreshErr := mm.sessionManager.RefreshSession(); refreshErr != nil {
@@ -111,10 +90,8 @@ func (mm *MediaManager) uploadBlobWithRetry(data []byte, mimeType string, isRetr
 	fmt.Printf("DEBUG: Server returned BlobRef - Type: %s, MimeType: %s, Size: %d\n",
 		uploadResp.Blob.Type, uploadResp.Blob.MimeType, uploadResp.Blob.Size)
 
-	if uploadResp.Blob.MimeType != mimeType {
-		fmt.Printf("WARNING: Server stored blob with MIME type '%s', but detected file type is '%s'. Using server value.\n", uploadResp.Blob.MimeType, mimeType)
-	}
-
+	fmt.Printf("DEBUG: Server returned MIME type: %s\n", uploadResp.Blob.MimeType)
+	
 	return &uploadResp.Blob, nil
 }
 
