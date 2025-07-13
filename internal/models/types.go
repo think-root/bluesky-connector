@@ -47,8 +47,16 @@ type PostRef struct {
 }
 
 type Embed struct {
-	Type   string       `json:"$type"`
-	Images []EmbedImage `json:"images,omitempty"`
+	Type    string        `json:"$type"`
+	Images  []EmbedImage  `json:"images,omitempty"`
+	External *EmbedExternal `json:"external,omitempty"`
+}
+
+type EmbedExternal struct {
+	URI         string    `json:"uri"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Thumb       *BlobRef  `json:"thumb,omitempty"`
 }
 
 type EmbedImage struct {

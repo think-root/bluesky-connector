@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	MaxPostLength = 300
+	MaxPostLength = 295
 	DelayBetweenPosts = 2 * time.Second
 )
 
@@ -118,15 +118,15 @@ func (c *BlueSkyClient) PostWithMedia(text, url string, imageData []byte) (*mode
 			postText = part
 		}
 
-		var embed *models.Embed
 		var reply *models.Reply
+		var postEmbed *models.Embed
 
 		// Add image to first post only
 		if i == 0 && imageData != nil {
 			logger.Info("Uploading image for first post")
 			mimeType := atproto.DetectMimeType(imageData)
 			var err error
-			embed, err = c.mediaManager.CreateImageEmbed(imageData, mimeType, "Image")
+			postEmbed, err = c.mediaManager.CreateImageEmbed(imageData, mimeType, "Image")
 			if err != nil {
 				logger.Errorf("Failed to create image embed: %v", err)
 				return nil, fmt.Errorf("failed to create image embed: %w", err)
@@ -153,7 +153,7 @@ func (c *BlueSkyClient) PostWithMedia(text, url string, imageData []byte) (*mode
 
 		logger.Infof("Creating post %d/%d: %s...", i+1, totalParts, postText[:min(50, len(postText))])
 
-		post, err := c.recordManager.CreatePost(c.userDID, postText, reply, embed)
+		post, err := c.recordManager.CreatePost(c.userDID, postText, reply, postEmbed)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create post %d: %w", i+1, err)
 		}
@@ -172,6 +172,7 @@ func (c *BlueSkyClient) PostWithMedia(text, url string, imageData []byte) (*mode
 		}
 	}
 
+
 	// Add URL as final reply if provided
 	if url != "" && previousPost != nil {
 		logger.Infof("Adding URL as final reply: %s", url)
@@ -188,7 +189,17 @@ func (c *BlueSkyClient) PostWithMedia(text, url string, imageData []byte) (*mode
 		}
 
 		time.Sleep(DelayBetweenPosts)
-		urlPost, err := c.recordManager.CreatePost(c.userDID, url, reply, nil)
+		
+		urlEmbed := &models.Embed{
+			Type: "app.bsky.embed.external",
+			External: &models.EmbedExternal{
+				URI:         url,
+				Title:       url, // Placeholder title
+				Description: url, // Placeholder description
+			},
+		}
+
+		urlPost, err := c.recordManager.CreatePost(c.userDID, "Link:", reply, urlEmbed)
 		if err != nil {
 			logger.Errorf("Failed to add URL reply: %v", err)
 			return nil, fmt.Errorf("failed to add URL reply: %w", err)
