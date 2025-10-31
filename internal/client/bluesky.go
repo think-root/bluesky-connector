@@ -101,8 +101,10 @@ func (c *BlueSkyClient) PostWithMedia(text, url string, imageData []byte) (*mode
 		}
 	}
 
+	textWithHashtags := text + "\n\n#GitHub #OpenSource"
+
 	var posts []models.CreateRecordResponse
-	textParts := c.splitTextIntoParts(text)
+	textParts := c.splitTextIntoParts(textWithHashtags)
 	totalParts := len(textParts)
 
 	logger.Infof("Posting content in %d parts", totalParts)
