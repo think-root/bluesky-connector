@@ -7,7 +7,7 @@
 > [!WARNING]
 > This project is not officially affiliated with Bluesky Social PBC. It's a third-party integration using the public AT Protocol APIs.
 
-This project provides a Go-based HTTP API server that integrates with the Bluesky AT Protocol to post content, including text, images, and URLs. It supports thread creation for long posts and includes API key middleware for secure access.
+This Go-based HTTP API server is built specifically for integration with the [content-maestro](https://github.com/think-root/content-maestro) app. It connects to the Bluesky AT Protocol to publish text, images, and URLs, and supports threaded posts for long content. Secure access is ensured through API key middleware.
 
 ## ✨ Features
 
