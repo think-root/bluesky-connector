@@ -17,9 +17,9 @@ type CreateSessionResponse struct {
 
 // AT Protocol Record types
 type CreateRecordRequest struct {
-	Repo       string      `json:"repo"`
-	Collection string      `json:"collection"`
-	Record     any `json:"record"`
+	Repo       string `json:"repo"`
+	Collection string `json:"collection"`
+	Record     any    `json:"record"`
 }
 
 type CreateRecordResponse struct {
@@ -29,11 +29,32 @@ type CreateRecordResponse struct {
 
 // Bluesky Post Record
 type PostRecord struct {
-	Type      string     `json:"$type"`
-	Text      string     `json:"text"`
-	CreatedAt time.Time  `json:"createdAt"`
-	Reply     *Reply     `json:"reply,omitempty"`
-	Embed     *Embed     `json:"embed,omitempty"`
+	Type      string          `json:"$type"`
+	Text      string          `json:"text"`
+	CreatedAt time.Time       `json:"createdAt"`
+	Reply     *Reply          `json:"reply,omitempty"`
+	Embed     *Embed          `json:"embed,omitempty"`
+	Facets    []RichTextFacet `json:"facets,omitempty"`
+}
+
+// RichTextFacet represents a rich text annotation (link, mention, hashtag)
+type RichTextFacet struct {
+	Index    ByteSlice `json:"index"`
+	Features []Feature `json:"features"`
+}
+
+// ByteSlice represents a byte range in UTF-8 encoded text
+type ByteSlice struct {
+	ByteStart int `json:"byteStart"`
+	ByteEnd   int `json:"byteEnd"`
+}
+
+// Feature represents a facet feature (link, mention, or tag)
+type Feature struct {
+	Type string `json:"$type"`
+	Tag  string `json:"tag,omitempty"` // for hashtags
+	URI  string `json:"uri,omitempty"` // for links
+	DID  string `json:"did,omitempty"` // for mentions
 }
 
 type Reply struct {
@@ -47,31 +68,31 @@ type PostRef struct {
 }
 
 type Embed struct {
-	Type    string        `json:"$type"`
-	Images  []EmbedImage  `json:"images,omitempty"`
+	Type     string         `json:"$type"`
+	Images   []EmbedImage   `json:"images,omitempty"`
 	External *EmbedExternal `json:"external,omitempty"`
 }
 
 type EmbedExternal struct {
-	URI         string    `json:"uri"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Thumb       *BlobRef  `json:"thumb,omitempty"`
+	URI         string   `json:"uri"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Thumb       *BlobRef `json:"thumb,omitempty"`
 }
 
 type EmbedImage struct {
-	Alt   string    `json:"alt"`
-	Image *BlobRef  `json:"image"`
+	Alt   string   `json:"alt"`
+	Image *BlobRef `json:"image"`
 }
 
 // BlobRef represents a reference to a blob in the AT Protocol
 // The Ref field can be either a string (CID) or an object containing the CID
 // This handles the variation in how different AT Protocol implementations return blob references
 type BlobRef struct {
-	Type     string      `json:"$type"`
-	Ref      any `json:"ref"` // Can be string (CID) or object with CID
-	MimeType string      `json:"mimeType"`
-	Size     int64       `json:"size"`
+	Type     string `json:"$type"`
+	Ref      any    `json:"ref"` // Can be string (CID) or object with CID
+	MimeType string `json:"mimeType"`
+	Size     int64  `json:"size"`
 }
 
 // GetRefString returns the ref as a string, handling both string and object cases
