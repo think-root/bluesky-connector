@@ -79,6 +79,8 @@ The server will start on `http://localhost:8080` (or your configured port).
 
 ## 🔌 API Endpoints
 
+The API provides endpoints for health monitoring and posting content to Bluesky. All post creation endpoints require authentication via API key.
+
 ### Health Check
 
 - **GET `/bluesky/api/health`**: Check server health status
@@ -149,7 +151,7 @@ curl -X POST http://localhost:8080/bluesky/api/test/posts/create \
   -H "X-API-Key: your-api-key"
 ```
 
-## ⚠️ Error Handling
+### Error Handling
 
 The API returns structured error responses:
 
@@ -165,18 +167,6 @@ Common HTTP status codes:
 - `400`: Bad Request (missing required fields)
 - `401`: Unauthorized (invalid or missing API key)
 - `500`: Internal Server Error
-
-## 📋 Logging
-
-The server provides structured JSON logging with timestamps:
-
-```json
-{
-  "level": "info",
-  "msg": "Successfully authenticated as username.bsky.social",
-  "time": "2025-01-07T10:30:45Z"
-}
-```
 
 ## 🔗 Related Projects
 
