@@ -13,6 +13,7 @@ This project provides a Go-based HTTP API server that integrates with the Bluesk
 
 - Post content with text to Bluesky
 - Attach images to posts
+- **Clickable hashtags** with automatic rich text facets
 - Automatically split long posts into threads
 - Add URLs as replies to posts
 - Secure API access using API key middleware
@@ -60,7 +61,8 @@ SERVER_PORT=8080
 LOG_LEVEL=info
 ```
 
-**Important**: 
+**Important**:
+
 - Use your Bluesky handle (e.g., `username.bsky.social`)
 - Generate an App Password in your Bluesky settings (not your main password)
 - Choose a strong, unique API key for server access
@@ -68,11 +70,13 @@ LOG_LEVEL=info
 ### 4. Run the server
 
 #### Local development:
+
 ```bash
 go run cmd/server/main.go
 ```
 
 #### Build and run:
+
 ```bash
 go build -o bluesky-connector cmd/server/main.go
 ./bluesky-connector
@@ -83,10 +87,12 @@ The server will start on `http://localhost:8080` (or your configured port).
 ## API Endpoints
 
 ### Health Check
+
 - **GET `/bluesky/api/health`**: Check server health status
   - Returns server status and timestamp
 
 ### Post Creation
+
 - **POST `/bluesky/api/posts/create`**: Create a new post
   - **Headers**: `X-API-Key: your-api-key`
   - **Content-Type**: `multipart/form-data`
@@ -96,6 +102,7 @@ The server will start on `http://localhost:8080` (or your configured port).
     - `image` (optional): An image file to attach to the post
 
 ### Test Post
+
 - **POST `/bluesky/api/test/posts/create`**: Create a test post
   - **Headers**: `X-API-Key: your-api-key`
   - Creates a simple test post to verify functionality
@@ -103,11 +110,13 @@ The server will start on `http://localhost:8080` (or your configured port).
 ## Usage Examples
 
 ### Health check
+
 ```bash
 curl -X GET http://localhost:8080/bluesky/api/health
 ```
 
 ### Simple text post
+
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/posts/create \
   -H "X-API-Key: your-api-key" \
@@ -115,6 +124,7 @@ curl -X POST http://localhost:8080/bluesky/api/posts/create \
 ```
 
 ### Post with image
+
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/posts/create \
   -H "X-API-Key: your-api-key" \
@@ -123,6 +133,7 @@ curl -X POST http://localhost:8080/bluesky/api/posts/create \
 ```
 
 ### Post with URL
+
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/posts/create \
   -H "X-API-Key: your-api-key" \
@@ -131,6 +142,7 @@ curl -X POST http://localhost:8080/bluesky/api/posts/create \
 ```
 
 ### Long post (will be split into thread)
+
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/posts/create \
   -H "X-API-Key: your-api-key" \
@@ -138,6 +150,7 @@ curl -X POST http://localhost:8080/bluesky/api/posts/create \
 ```
 
 ### Test endpoint
+
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/test/posts/create \
   -H "X-API-Key: your-api-key"
@@ -146,16 +159,19 @@ curl -X POST http://localhost:8080/bluesky/api/test/posts/create \
 ## Docker Deployment
 
 ### Build and run with Docker Compose
+
 ```bash
 docker-compose up --build
 ```
 
 ### Build Docker image manually
+
 ```bash
 docker build -t bluesky-connector .
 ```
 
 ### Run Docker container
+
 ```bash
 docker run -d \
   --name bluesky-connector \
@@ -168,13 +184,13 @@ docker run -d \
 
 ### Environment Variables
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `BLUESKY_HANDLE` | Your Bluesky handle | Yes | - |
-| `BLUESKY_APP_PASSWORD` | Your Bluesky App Password | Yes | - |
-| `SERVER_API_KEY` | API key for server access | Yes | - |
-| `SERVER_PORT` | Server port | No | 8080 |
-| `LOG_LEVEL` | Log level (debug, info, warn, error) | No | info |
+| Variable               | Description                          | Required | Default |
+| ---------------------- | ------------------------------------ | -------- | ------- |
+| `BLUESKY_HANDLE`       | Your Bluesky handle                  | Yes      | -       |
+| `BLUESKY_APP_PASSWORD` | Your Bluesky App Password            | Yes      | -       |
+| `SERVER_API_KEY`       | API key for server access            | Yes      | -       |
+| `SERVER_PORT`          | Server port                          | No       | 8080    |
+| `LOG_LEVEL`            | Log level (debug, info, warn, error) | No       | info    |
 
 ### Log Levels
 
@@ -204,6 +220,7 @@ The API returns structured error responses:
 ```
 
 Common HTTP status codes:
+
 - `200`: Success
 - `400`: Bad Request (missing required fields)
 - `401`: Unauthorized (invalid or missing API key)
@@ -224,6 +241,7 @@ The server provides structured JSON logging with timestamps:
 ## Development
 
 ### Project Structure
+
 ```
 bluesky-connector/
 ├── cmd/server/          # Main application entry point
@@ -241,11 +259,13 @@ bluesky-connector/
 ```
 
 ### Running Tests
+
 ```bash
 go test ./...
 ```
 
 ### Building for Production
+
 ```bash
 CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bluesky-connector cmd/server/main.go
 ```
@@ -263,15 +283,18 @@ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bluesky-connector cmd
 ### Common Issues
 
 1. **Authentication Failed**
+
    - Verify your Bluesky handle is correct
    - Ensure you're using an App Password, not your main password
    - Check that your account is active
 
 2. **API Key Errors**
+
    - Verify the `X-API-Key` header is included in requests
    - Ensure the API key matches your configuration
 
 3. **Image Upload Issues**
+
    - Supported formats: JPEG, PNG, GIF, WebP
    - Maximum file size limits apply (check Bluesky documentation)
 
@@ -307,6 +330,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Support
 
 For issues and questions:
+
 - Create an issue on GitHub
 - Check the [Bluesky API Documentation](https://docs.bsky.app/)
 - Review the [AT Protocol Specifications](https://atproto.com/)
