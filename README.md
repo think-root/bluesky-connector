@@ -5,7 +5,6 @@
 [![Go 1.24.4](https://img.shields.io/badge/Go-1.24.4-blue.svg)](https://golang.org/)
 [![Gin](https://img.shields.io/badge/Gin-1.10.0-green.svg)](https://gin-gonic.com/)
 [![Bluesky API](https://img.shields.io/badge/Bluesky%20API-AT%20Protocol-blue.svg)](https://docs.bsky.app/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 
 This project provides a Go-based HTTP API server that integrates with the Bluesky AT Protocol to post content, including text, images, and URLs. It supports thread creation for long posts and includes API key middleware for secure access.
 
@@ -18,7 +17,6 @@ This project provides a Go-based HTTP API server that integrates with the Bluesk
 - Add URLs as replies to posts
 - Secure API access using API key middleware
 - Structured logging with different log levels
-- Docker support for easy deployment
 - Health check endpoint
 - Graceful shutdown
 
@@ -26,7 +24,6 @@ This project provides a Go-based HTTP API server that integrates with the Bluesk
 
 - Go 1.24.4 or higher
 - Bluesky account with App Password
-- Docker (optional, for containerized deployment)
 
 ## Setup
 
@@ -156,30 +153,6 @@ curl -X POST http://localhost:8080/bluesky/api/test/posts/create \
   -H "X-API-Key: your-api-key"
 ```
 
-## Docker Deployment
-
-### Build and run with Docker Compose
-
-```bash
-docker-compose up --build
-```
-
-### Build Docker image manually
-
-```bash
-docker build -t bluesky-connector .
-```
-
-### Run Docker container
-
-```bash
-docker run -d \
-  --name bluesky-connector \
-  -p 8080:8080 \
-  --env-file .env \
-  bluesky-connector
-```
-
 ## Configuration
 
 ### Environment Variables
@@ -239,24 +212,6 @@ The server provides structured JSON logging with timestamps:
 ```
 
 ## Development
-
-### Project Structure
-
-```
-bluesky-connector/
-├── cmd/server/          # Main application entry point
-├── internal/            # Private application code
-│   ├── client/         # Bluesky client implementation
-│   ├── config/         # Configuration management
-│   ├── handlers/       # HTTP request handlers
-│   ├── logger/         # Logging utilities
-│   ├── middleware/     # HTTP middleware
-│   └── models/         # Data models and types
-├── pkg/atproto/        # AT Protocol client library
-├── .env.example        # Environment configuration template
-├── Dockerfile          # Docker container definition
-└── docker-compose.yml  # Docker Compose configuration
-```
 
 ### Running Tests
 
