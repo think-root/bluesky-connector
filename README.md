@@ -4,6 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go 1.24.4](https://img.shields.io/badge/Go-1.24.4-blue.svg)](https://golang.org/)
 
+> [!WARNING]
+> This project is not officially affiliated with Bluesky Social PBC. It's a third-party integration using the public AT Protocol APIs.
+
 This project provides a Go-based HTTP API server that integrates with the Bluesky AT Protocol to post content, including text, images, and URLs. It supports thread creation for long posts and includes API key middleware for secure access.
 
 ## ✨ Features
@@ -183,15 +186,11 @@ The server provides structured JSON logging with timestamps:
 4. Add tests for new functionality
 5. Submit a pull request
 
-## 📄 License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
 ## 🔗 Related Projects
 
 - [X Connector](https://github.com/think-root/x-connector) - Similar connector for X (Twitter)
 - [Content Maestro](https://github.com/think-root/content-maestro) - Content management system
 
----
+## 📄 License
 
-**Note**: This project is not officially affiliated with Bluesky Social PBC. It's a third-party integration using the public AT Protocol APIs.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
