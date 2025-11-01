@@ -12,12 +12,12 @@ import (
 
 const (
 	CreateRecordEndpoint = "/xrpc/com.atproto.repo.createRecord"
-	PostCollection = "app.bsky.feed.post"
+	PostCollection       = "app.bsky.feed.post"
 )
 
 type RecordManager struct {
-	baseURL       string
-	httpClient    *http.Client
+	baseURL        string
+	httpClient     *http.Client
 	sessionManager *SessionManager
 }
 
@@ -25,10 +25,10 @@ func NewRecordManager(baseURL string, sessionManager *SessionManager) *RecordMan
 	if baseURL == "" {
 		baseURL = DefaultBaseURL
 	}
-	
+
 	return &RecordManager{
-		baseURL:       baseURL,
-		httpClient:    sessionManager.httpClient,
+		baseURL:        baseURL,
+		httpClient:     sessionManager.httpClient,
 		sessionManager: sessionManager,
 	}
 }
@@ -51,12 +51,19 @@ func (rm *RecordManager) createPostWithRetry(repo, text string, reply *models.Re
 			embed.Type, embed.Images[0].Image.MimeType)
 	}
 
+	// Detect hashtags and create facets
+	facets := DetectHashtags(text)
+	if len(facets) > 0 {
+		fmt.Printf("DEBUG: Detected %d hashtag(s) in post\n", len(facets))
+	}
+
 	postRecord := models.PostRecord{
 		Type:      "app.bsky.feed.post",
 		Text:      text,
 		CreatedAt: time.Now().UTC(),
 		Reply:     reply,
 		Embed:     embed,
+		Facets:    facets,
 	}
 
 	reqBody := models.CreateRecordRequest{
@@ -90,7 +97,7 @@ func (rm *RecordManager) createPostWithRetry(repo, text string, reply *models.Re
 		var atError models.ATProtoError
 		if err := json.NewDecoder(resp.Body).Decode(&atError); err == nil {
 			fmt.Printf("DEBUG: AT Protocol error: %s (retry=%v)\n", atError.String(), isRetry)
-			
+
 			// If token expired and this is not a retry, attempt to refresh and retry
 			if atError.Error == "ExpiredToken" && !isRetry {
 				fmt.Println("DEBUG: Token expired, attempting to refresh session...")
@@ -101,7 +108,7 @@ func (rm *RecordManager) createPostWithRetry(repo, text string, reply *models.Re
 				fmt.Println("DEBUG: Session refreshed successfully, retrying post creation...")
 				return rm.createPostWithRetry(repo, text, reply, embed, true)
 			}
-			
+
 			return nil, fmt.Errorf("AT Protocol error: %s", atError.String())
 		}
 		return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode)
