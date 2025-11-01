@@ -102,15 +102,15 @@ The API provides endpoints for health monitoring and posting content to Bluesky.
   - **Headers**: `X-API-Key: your-api-key`
   - Creates a simple test post to verify functionality
 
-## 📝 Usage Examples
+### Usage Examples
 
-### Health check
+####  Health check
 
 ```bash
 curl -X GET http://localhost:8080/bluesky/api/health
 ```
 
-### Simple text post
+#### Simple text post
 
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/posts/create \
@@ -118,7 +118,7 @@ curl -X POST http://localhost:8080/bluesky/api/posts/create \
   -F "text=Hello, Bluesky! This is a test post."
 ```
 
-### Post with image
+#### Post with image
 
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/posts/create \
@@ -127,7 +127,7 @@ curl -X POST http://localhost:8080/bluesky/api/posts/create \
   -F "image=@/path/to/your/image.jpg"
 ```
 
-### Post with URL
+#### Post with URL
 
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/posts/create \
@@ -136,7 +136,7 @@ curl -X POST http://localhost:8080/bluesky/api/posts/create \
   -F "url=https://example.com/article"
 ```
 
-### Long post (will be split into thread)
+#### Long post (will be split into thread)
 
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/posts/create \
@@ -144,7 +144,7 @@ curl -X POST http://localhost:8080/bluesky/api/posts/create \
   -F "text=This is a very long post that exceeds the character limit and will be automatically split into multiple posts in a thread. The system will handle the threading automatically and add appropriate numbering to each part."
 ```
 
-### Test endpoint
+#### Test endpoint
 
 ```bash
 curl -X POST http://localhost:8080/bluesky/api/test/posts/create \
