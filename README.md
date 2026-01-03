@@ -1,178 +1,234 @@
-# Bluesky Connector
+# bluesky-connector
 
-[![deploy](https://github.com/think-root/bluesky-connector/actions/workflows/deploy.yml/badge.svg)](https://github.com/think-root/bluesky-connector/actions/workflows/deploy.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go 1.24.4](https://img.shields.io/badge/Go-1.24.4-blue.svg)](https://golang.org/)
+This project is part of the [content-maestro](https://github.com/think-root/content-maestro) repository. If you want Bluesky integration and automatic publishing of posts there as well, you need to deploy this app.
 
-> [!WARNING]
-> This project is not officially affiliated with Bluesky Social PBC. It's a third-party integration using the public AT Protocol APIs.
+## Description
 
-This Go-based HTTP API server is built specifically for integration with the [content-maestro](https://github.com/think-root/content-maestro) app. It connects to the Bluesky AT Protocol to publish text, images, and URLs, and supports threaded posts for long content. Secure access is ensured through API key middleware.
+A Go-based HTTP API server that integrates with the Bluesky AT Protocol. It exposes REST endpoints for creating posts or threaded replies, optionally attaching media and URLs. API key middleware secures every request, and structured logging provides visibility into request flow.
 
-## ✨ Features
+## Prerequisites
 
-- Post content with text to Bluesky
-- Attach images to posts
-- Clickable hashtags with automatic rich text facets
-- Automatically split long posts into threads
-- Add URLs as replies to posts
+Before running the service, make sure you have:
 
-## 📋 Prerequisites
+- [Go](https://go.dev/dl/) 1.21+
+- A Bluesky handle (e.g., `username.bsky.social`)
+- A Bluesky App Password generated in Bluesky settings
+- A strong `SERVER_API_KEY` that clients must send via headers
+- `.env.example` as a reference for all environment variables
 
-- Go 1.24.4 or higher
-- Bluesky account with App Password
+## Setup
 
-## ⚙️ Setup
+1. **Clone the repository:**
 
-### 1. Clone the repository
+2. **Install dependencies:**
 
-```bash
-git clone https://github.com/think-root/bluesky-connector.git
-cd bluesky-connector
+   ```bash
+   go mod tidy
+   ```
+
+3. **Create a `.env` file:**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Then populate the required variables:
+
+   ```
+   BLUESKY_HANDLE=your_handle.bsky.social
+   BLUESKY_APP_PASSWORD=your_app_password
+   SERVER_API_KEY=your_server_api_key
+   SERVER_PORT=8080
+   LOG_LEVEL=info
+   ```
+
+   Use a dedicated Bluesky App Password (not your main password) and a unique API key.
+
+4. **Run the server:**
+
+   ```bash
+   go run cmd/server/main.go
+   ```
+
+   Optional production build:
+
+   ```bash
+   go build -o bluesky-connector cmd/server/main.go
+   ./bluesky-connector
+   ```
+
+   The server listens on `http://localhost:8080` unless `SERVER_PORT` overrides it.
+
+## API
+
+All post-creation endpoints require the `X-API-Key` header containing your `SERVER_API_KEY` value.
+
+### Authentication
+
+| Header      | Type   | Required | Description                        |
+|-------------|--------|----------|------------------------------------|
+| `X-API-Key` | string | Yes      | API key defined in the `.env` file |
+
+**Error Response (401 Unauthorized):**
+
+```json
+{
+  "detail": "Invalid or missing API key"
+}
 ```
 
-### 2. Install dependencies
+---
 
-```bash
-go mod tidy
-```
+### GET `/bluesky/api/health`
 
-### 3. Create environment configuration
+Checks the service status and returns a timestamped heartbeat.
 
-Copy the example environment file and configure it:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your actual values
-
-| Variable               | Description                          | Required | Default |
-| ---------------------- | ------------------------------------ | -------- | ------- |
-| `BLUESKY_HANDLE`       | Your Bluesky handle                  | Yes      | -       |
-| `BLUESKY_APP_PASSWORD` | Your Bluesky App Password            | Yes      | -       |
-| `SERVER_API_KEY`       | API key for server access            | Yes      | -       |
-| `SERVER_PORT`          | Server port                          | No       | 8080    |
-| `LOG_LEVEL`            | Log level (debug, info, warn, error) | No       | info    |
-
-> [!IMPORTANT]
-> - Use your Bluesky handle (e.g., `username.bsky.social`)<br>
-> - Generate an App Password in your Bluesky settings (not your main password) <br>
-> - Choose a strong, unique API key for server access
-
-### 4. Run the server
-
-#### Local development:
-
-```bash
-go run cmd/server/main.go
-```
-
-#### Build and run:
-
-```bash
-go build -o bluesky-connector cmd/server/main.go
-./bluesky-connector
-```
-
-The server will start on `http://localhost:8080` (or your configured port).
-
-## 🔌 API Endpoints
-
-The API provides endpoints for health monitoring and posting content to Bluesky. All post creation endpoints require authentication via API key.
-
-### Health Check
-
-- **GET `/bluesky/api/health`**: Check server health status
-  - Returns server status and timestamp
-
-### Post Creation
-
-- **POST `/bluesky/api/posts/create`**: Create a new post
-  - **Headers**: `X-API-Key: your-api-key`
-  - **Content-Type**: `multipart/form-data`
-  - **Parameters**:
-    - `text` (required): The text content of the post
-    - `url` (optional): A URL to include as a reply to the post
-    - `image` (optional): An image file to attach to the post
-
-### Test Post
-
-- **POST `/bluesky/api/test/posts/create`**: Create a test post
-  - **Headers**: `X-API-Key: your-api-key`
-  - Creates a simple test post to verify functionality
-
-### Usage Examples
-
-####  Health check
+#### Request
 
 ```bash
 curl -X GET http://localhost:8080/bluesky/api/health
 ```
 
-#### Simple text post
-
-```bash
-curl -X POST http://localhost:8080/bluesky/api/posts/create \
-  -H "X-API-Key: your-api-key" \
-  -F "text=Hello, Bluesky! This is a test post."
-```
-
-#### Post with image
-
-```bash
-curl -X POST http://localhost:8080/bluesky/api/posts/create \
-  -H "X-API-Key: your-api-key" \
-  -F "text=Check out this image!" \
-  -F "image=@/path/to/your/image.jpg"
-```
-
-#### Post with URL
-
-```bash
-curl -X POST http://localhost:8080/bluesky/api/posts/create \
-  -H "X-API-Key: your-api-key" \
-  -F "text=Interesting article about decentralized social media" \
-  -F "url=https://example.com/article"
-```
-
-#### Long post (will be split into thread)
-
-```bash
-curl -X POST http://localhost:8080/bluesky/api/posts/create \
-  -H "X-API-Key: your-api-key" \
-  -F "text=This is a very long post that exceeds the character limit and will be automatically split into multiple posts in a thread. The system will handle the threading automatically and add appropriate numbering to each part."
-```
-
-#### Test endpoint
-
-```bash
-curl -X POST http://localhost:8080/bluesky/api/test/posts/create \
-  -H "X-API-Key: your-api-key"
-```
-
-### Error Handling
-
-The API returns structured error responses:
+#### Response (200 OK)
 
 ```json
 {
-  "error": "Error description"
+  "status": "ok",
+  "timestamp": "2024-01-01T12:00:00Z"
 }
 ```
 
-Common HTTP status codes:
+---
 
-- `200`: Success
-- `400`: Bad Request (missing required fields)
-- `401`: Unauthorized (invalid or missing API key)
-- `500`: Internal Server Error
+### POST `/bluesky/api/posts/create`
 
-## 🔗 Related Projects
+Creates a Bluesky post (or thread if the text exceeds the configured limit), with optional media and URL reply.
 
-- [X Connector](https://github.com/think-root/x-connector) - Similar connector for X (Twitter)
-- [Content Maestro](https://github.com/think-root/content-maestro) - Content management system
+#### Request
 
-## 📄 License
+**Content-Type:** `multipart/form-data`
+
+| Parameter | Type   | Required | Description                                                                 |
+|-----------|--------|----------|-----------------------------------------------------------------------------|
+| `text`    | string | Yes      | Main post content. Long input is split into a numbered thread automatically |
+| `url`     | string | No       | A URL appended as the final reply in the thread                              |
+| `image`   | file   | No       | Image attached to the first post in the thread                               |
+
+#### Examples
+
+**Simple post:**
+
+```bash
+curl -X POST "http://localhost:8080/bluesky/api/posts/create" \
+  -H "X-API-Key: your_api_key" \
+  -F "text=Hello, Bluesky!"
+```
+
+**Post with image:**
+
+```bash
+curl -X POST "http://localhost:8080/bluesky/api/posts/create" \
+  -H "X-API-Key: your_api_key" \
+  -F "text=Check out this snapshot!" \
+  -F "image=@/path/to/image.jpg"
+```
+
+**Post with URL reply:**
+
+```bash
+curl -X POST "http://localhost:8080/bluesky/api/posts/create" \
+  -H "X-API-Key: your_api_key" \
+  -F "text=Interesting article on federation" \
+  -F "url=https://example.com/article"
+```
+
+**Full request (text + image + URL):**
+
+```bash
+curl -X POST "http://localhost:8080/bluesky/api/posts/create" \
+  -H "X-API-Key: your_api_key" \
+  -F "text=Deep dive into decentralized social" \
+  -F "url=https://example.com/deep-dive" \
+  -F "image=@/path/to/image.jpg"
+```
+
+#### Response (200 OK)
+
+```json
+{
+  "posts": [
+    {
+      "uri": "at://did:plc:example/app.bsky.feed.post/3knx123",
+      "cid": "bafyreigexample",
+      "text": "Hello, Bluesky!"
+    }
+  ]
+}
+```
+
+**Threaded response:**
+
+```json
+{
+  "posts": [
+    {
+      "text": "🧵 0/2 First part of a long update..."
+    },
+    {
+      "text": "🧵 1/2 Second part..."
+    },
+    {
+      "text": "🧵 2/2 Final thoughts..."
+    }
+  ]
+}
+```
+
+**Error:**
+
+```json
+{
+  "error": "Invalid payload"
+}
+```
+
+---
+
+### POST `/bluesky/api/test/posts/create`
+
+Publishes a fixed text post (`"test"`) to verify authentication and connectivity.
+
+#### Request
+
+```bash
+curl -X POST "http://localhost:8080/bluesky/api/test/posts/create" \
+  -H "X-API-Key: your_api_key"
+```
+
+#### Response (200 OK)
+
+```json
+{
+  "posts": [
+    {
+      "text": "test"
+    }
+  ]
+}
+```
+
+---
+
+### Thread Behavior
+
+When the supplied text exceeds the maximum length (default `265` characters):
+
+1. The content is split at word boundaries into multiple posts.
+2. Each post is prefixed with thread counters (e.g., `🧵 0/3`).
+3. Every part is published as a reply to the previous one to form a thread.
+4. The optional image is attached only to the first post in the sequence.
+5. If a `url` is provided, it becomes the final reply in the thread.
+
+## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
