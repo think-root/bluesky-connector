@@ -191,17 +191,15 @@ func (c *BlueSkyClient) PostWithMedia(text, url string, imageData []byte) (*mode
 		}
 
 		time.Sleep(DelayBetweenPosts)
-		
-		urlEmbed := &models.Embed{
-			Type: "app.bsky.embed.external",
-			External: &models.EmbedExternal{
-				URI:         url,
-				Title:       url, // Placeholder title
-				Description: url, // Placeholder description
-			},
+
+		// Create external embed with OG metadata
+		urlEmbed, err := c.mediaManager.CreateExternalEmbed(url)
+		if err != nil {
+			logger.Errorf("Failed to create external embed: %v", err)
+			return nil, fmt.Errorf("failed to create external embed: %w", err)
 		}
 
-		urlPost, err := c.recordManager.CreatePost(c.userDID, "Link:", reply, urlEmbed)
+		urlPost, err := c.recordManager.CreatePost(c.userDID, url, reply, urlEmbed)
 		if err != nil {
 			logger.Errorf("Failed to add URL reply: %v", err)
 			return nil, fmt.Errorf("failed to add URL reply: %w", err)
