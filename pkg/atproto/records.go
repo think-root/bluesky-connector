@@ -57,6 +57,13 @@ func (rm *RecordManager) createPostWithRetry(repo, text string, reply *models.Re
 		fmt.Printf("DEBUG: Detected %d hashtag(s) in post\n", len(facets))
 	}
 
+	// Detect links and add to facets
+	linkFacets := DetectLinks(text)
+	if len(linkFacets) > 0 {
+		fmt.Printf("DEBUG: Detected %d link(s) in post\n", len(linkFacets))
+		facets = append(facets, linkFacets...)
+	}
+
 	postRecord := models.PostRecord{
 		Type:      "app.bsky.feed.post",
 		Text:      text,
@@ -76,6 +83,9 @@ func (rm *RecordManager) createPostWithRetry(repo, text string, reply *models.Re
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
+
+	// Log payload for debugging
+	fmt.Printf("DEBUG: Request Payload: %s\n", string(jsonData))
 
 	req, err := http.NewRequest("POST", rm.baseURL+CreateRecordEndpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -106,6 +116,13 @@ func (rm *RecordManager) createPostWithRetry(repo, text string, reply *models.Re
 					return nil, fmt.Errorf("AT Protocol error: %s (failed to refresh: %v)", atError.String(), refreshErr)
 				}
 				fmt.Println("DEBUG: Session refreshed successfully, retrying post creation...")
+				return rm.createPostWithRetry(repo, text, reply, embed, true)
+			}
+
+			// Retry on UpstreamFailure
+			if atError.Error == "UpstreamFailure" && !isRetry {
+				fmt.Println("DEBUG: UpstreamFailure detected, waiting 1s and retrying...")
+				time.Sleep(1 * time.Second)
 				return rm.createPostWithRetry(repo, text, reply, embed, true)
 			}
 
