@@ -77,6 +77,42 @@ func DetectHashtags(text string) []models.RichTextFacet {
 	return facets
 }
 
+// DetectLinks finds URLs in text and returns facets for them
+func DetectLinks(text string) []models.RichTextFacet {
+	var facets []models.RichTextFacet
+
+	// Regex pattern for URLs
+	re := regexp.MustCompile(`https?://[^\s<>\[\]()]+`)
+
+	matches := re.FindAllStringIndex(text, -1)
+
+	for _, match := range matches {
+		urlStart := match[0]
+		urlEnd := match[1]
+
+		url := text[urlStart:urlEnd]
+
+		// Strip trailing punctuation from URL
+		url = stripTrailingPunctuation(url)
+		urlEnd = urlStart + len(url)
+
+		facets = append(facets, models.RichTextFacet{
+			Index: models.ByteSlice{
+				ByteStart: urlStart,
+				ByteEnd:   urlEnd,
+			},
+			Features: []models.Feature{
+				{
+					Type: "app.bsky.richtext.facet#link",
+					URI:  url,
+				},
+			},
+		})
+	}
+
+	return facets
+}
+
 // stripTrailingPunctuation removes trailing punctuation from a string
 func stripTrailingPunctuation(s string) string {
 	// Remove common trailing punctuation
